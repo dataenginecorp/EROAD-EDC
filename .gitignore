@@ -1,0 +1,5 @@
+# Private keys
+*.p8
+*.pem
+*.key
+.ssh/
