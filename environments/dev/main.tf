@@ -4,6 +4,7 @@ module "region_cloud" {
   access_db     = var.access_db
   access_schema = var.access_schema
   access_table  = var.access_table
+
 }
 
 module "edc_db_schema" {
