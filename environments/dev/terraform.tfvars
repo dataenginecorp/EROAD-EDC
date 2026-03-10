@@ -4,7 +4,7 @@ snowflake_account_name      = "DI07734"
 snowflake_user              = "TERRAFORM_SVC"
 snowflake_role              = "ACCOUNTADMIN"
 snowflake_authenticator     = "SNOWFLAKE_JWT"
-snowflake_private_key_path  = "../../.ssh/snowflake_tf_snow_key.p8"
+#snowflake_private_key_path  = "../../.ssh/snowflake_tf_snow_key.p8"
 
 # ── EDC Database ──────────────────────────────────────────────────
 edc_db = "DEV_EDC"
