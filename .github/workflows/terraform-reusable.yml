@@ -17,6 +17,7 @@ on:
         default: false
         description: "Whether to run terraform apply"
     secrets:
+      # ── Snowflake connection (repo secrets) ────────────────────
       SNOWFLAKE_PRIVATE_KEY:
         required: true
       SNOWFLAKE_ORGANIZATION_NAME:
@@ -27,6 +28,7 @@ on:
         required: true
       SNOWFLAKE_ROLE:
         required: true
+      # ── Per-environment values (environment secrets) ───────────
       TF_VAR_EDC_DB:
         required: true
       TF_VAR_SOURCE_DB:
@@ -52,20 +54,22 @@ jobs:
 
     env:
       # Snowflake connection
-      TF_VAR_snowflake_organization_name: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
-      TF_VAR_snowflake_account_name:      ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
-      TF_VAR_snowflake_user:              ${{ secrets.SNOWFLAKE_USER }}
-      TF_VAR_snowflake_role:              ${{ secrets.SNOWFLAKE_ROLE }}
-      TF_VAR_snowflake_authenticator:     "SNOWFLAKE_JWT"
-      TF_VAR_snowflake_private_key_path:  "/tmp/snowflake_key.p8"
-      TF_VAR_edc_db:                      ${{ secrets.TF_VAR_EDC_DB }}
-      TF_VAR_source_db:                   ${{ secrets.TF_VAR_SOURCE_DB }}
-      TF_VAR_target_account:              ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
-      TF_VAR_access_db:                   ${{ secrets.TF_VAR_ACCESS_DB }}
-      TF_VAR_access_schema:               ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
-      TF_VAR_access_table:                ${{ secrets.TF_VAR_ACCESS_TABLE }}
-      TF_VAR_warehouse:                   ${{ secrets.TF_VAR_WAREHOUSE }}
-      TF_VAR_target_lag_maximum_duration: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+      TF_VAR_snowflake_organization_name:  ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      TF_VAR_snowflake_account_name:       ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      TF_VAR_snowflake_user:               ${{ secrets.SNOWFLAKE_USER }}
+      TF_VAR_snowflake_role:               ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_snowflake_authenticator:      "SNOWFLAKE_JWT"
+      TF_VAR_snowflake_private_key_path:   "/tmp/snowflake_key.p8"
+
+      # Per-environment values
+      TF_VAR_edc_db:                       ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_source_db:                    ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_target_account:               ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_access_db:                    ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_access_schema:                ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_access_table:                 ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_warehouse:                    ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_target_lag_maximum_duration:  ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
 
     steps:
       # ── Setup ────────────────────────────────────────────────────
@@ -144,9 +148,12 @@ jobs:
               body
             });
 
+      # ── Block merge if plan failed ────────────────────────────────
       - name: Fail if plan errored
         if: steps.plan.outcome == 'failure'
-        run: exit 1
+        run: |
+          echo "❌ Terraform plan failed for ${{ inputs.environment }} — merge is blocked."
+          exit 1
 
       # ── Apply ─────────────────────────────────────────────────────
       - name: Terraform Apply
