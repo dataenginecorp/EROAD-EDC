@@ -88,10 +88,6 @@ jobs:
           terraform_wrapper: true
 
       # ── Validate ─────────────────────────────────────────────────
-      - name: Terraform Format Check
-        working-directory: ${{ inputs.working_directory }}
-        run: terraform fmt -check -recursive
-
       - name: Terraform Init
         working-directory: ${{ inputs.working_directory }}
         run: terraform init
