@@ -17,7 +17,6 @@ on:
         default: false
         description: "Whether to run terraform apply"
     secrets:
-      # ── Snowflake connection (repo secrets) ────────────────────
       SNOWFLAKE_PRIVATE_KEY:
         required: true
       SNOWFLAKE_ORGANIZATION_NAME:
@@ -28,7 +27,6 @@ on:
         required: true
       SNOWFLAKE_ROLE:
         required: true
-      # ── Per-environment values (environment secrets) ───────────
       TF_VAR_EDC_DB:
         required: true
       TF_VAR_SOURCE_DB:
@@ -53,32 +51,30 @@ jobs:
     environment: ${{ inputs.environment }}
 
     env:
-      # Snowflake connection
-      TF_VAR_snowflake_organization_name:  ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
-      TF_VAR_snowflake_account_name:       ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
-      TF_VAR_snowflake_user:               ${{ secrets.SNOWFLAKE_USER }}
-      TF_VAR_snowflake_role:               ${{ secrets.SNOWFLAKE_ROLE }}
-      TF_VAR_snowflake_authenticator:      "SNOWFLAKE_JWT"
-      TF_VAR_snowflake_private_key_path:   "/tmp/snowflake_key.p8"
+      TF_VAR_snowflake_organization_name: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      TF_VAR_snowflake_account_name: ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      TF_VAR_snowflake_user: ${{ secrets.SNOWFLAKE_USER }}
+      TF_VAR_snowflake_role: ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_snowflake_authenticator: SNOWFLAKE_JWT
+      TF_VAR_snowflake_private_key_path: /tmp/snowflake_key.p8
 
-      # Per-environment values
-      TF_VAR_edc_db:                       ${{ secrets.TF_VAR_EDC_DB }}
-      TF_VAR_source_db:                    ${{ secrets.TF_VAR_SOURCE_DB }}
-      TF_VAR_target_account:               ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
-      TF_VAR_access_db:                    ${{ secrets.TF_VAR_ACCESS_DB }}
-      TF_VAR_access_schema:                ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
-      TF_VAR_access_table:                 ${{ secrets.TF_VAR_ACCESS_TABLE }}
-      TF_VAR_warehouse:                    ${{ secrets.TF_VAR_WAREHOUSE }}
-      TF_VAR_target_lag_maximum_duration:  ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+      TF_VAR_edc_db: ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_source_db: ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_target_account: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_access_db: ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_access_schema: ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_access_table: ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_warehouse: ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_target_lag_maximum_duration: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
 
     steps:
-      # ── Setup ────────────────────────────────────────────────────
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Write private key to file
+        shell: bash
         run: |
-          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > /tmp/snowflake_key.p8
+          printf '%s' "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > /tmp/snowflake_key.p8
           chmod 600 /tmp/snowflake_key.p8
 
       - name: Setup Terraform
@@ -87,40 +83,50 @@ jobs:
           terraform_version: "~1.7"
           terraform_wrapper: true
 
-      # ── Validate ─────────────────────────────────────────────────
       - name: Terraform Init
         working-directory: ${{ inputs.working_directory }}
-        run: terraform init
+        run: terraform init -input=false
 
       - name: Terraform Validate
         working-directory: ${{ inputs.working_directory }}
         run: terraform validate
 
-      # ── Plan ─────────────────────────────────────────────────────
       - name: Terraform Plan
         id: plan
+        if: ${{ !inputs.apply }}
         working-directory: ${{ inputs.working_directory }}
-        run: terraform plan -out=tfplan -detailed-exitcode 2>&1 | tee plan_output.txt
         continue-on-error: true
+        run: terraform plan -no-color -input=false -out=tfplan -detailed-exitcode
 
-      # ── Block merge if plan failed ────────────────────────────────
       - name: Fail if plan errored
-        if: steps.plan.outcome == 'failure'
+        if: ${{ !inputs.apply && steps.plan.outputs.exitcode == '1' }}
         run: |
-          echo "❌ Terraform plan failed for ${{ inputs.environment }} — merge is blocked."
+          echo "❌ Terraform plan failed for ${{ inputs.environment }}."
           exit 1
 
-      # ── Apply ─────────────────────────────────────────────────────
+      - name: Plan summary
+        if: ${{ !inputs.apply }}
+        run: |
+          echo "Terraform plan exit code: ${{ steps.plan.outputs.exitcode }}"
+          if [ "${{ steps.plan.outputs.exitcode }}" = "0" ]; then
+            echo "No changes detected."
+          elif [ "${{ steps.plan.outputs.exitcode }}" = "2" ]; then
+            echo "Changes detected."
+          else
+            echo "Plan failed."
+          fi
+
+      - name: Terraform Plan (for apply)
+        id: apply_plan
+        if: ${{ inputs.apply }}
+        working-directory: ${{ inputs.working_directory }}
+        run: terraform plan -no-color -input=false -out=tfplan
+
       - name: Terraform Apply
-        if: ${{ inputs.apply && steps.plan.outputs.exitcode == '2' }}
+        if: ${{ inputs.apply }}
         working-directory: ${{ inputs.working_directory }}
         run: terraform apply -auto-approve tfplan
 
-      - name: Skip — no changes detected
-        if: ${{ inputs.apply && steps.plan.outputs.exitcode == '0' }}
-        run: echo "No changes detected — skipping apply."
-
-      # ── Cleanup ──────────────────────────────────────────────────
       - name: Clean up private key
         if: always()
         run: rm -f /tmp/snowflake_key.p8
