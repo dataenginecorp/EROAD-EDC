@@ -1,0 +1,163 @@
+name: Terraform Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'environments/**'
+      - 'modules/**'
+      - 'sql/**'
+
+concurrency:
+  group: terraform-deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy-dev:
+    name: Deploy — dev
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: dev
+      working_directory: environments/dev
+      apply: true
+    secrets:
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_ORGANIZATION_NAME: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      SNOWFLAKE_ACCOUNT_NAME: ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_EDC_DB: ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_SOURCE_DB: ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_TARGET_ACCOUNT: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_ACCESS_DB: ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_ACCESS_SCHEMA: ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_ACCESS_TABLE: ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_WAREHOUSE: ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_TARGET_LAG_MAXIMUM_DURATION: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+
+  deploy-test:
+    name: Deploy — test
+    needs: deploy-dev
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: test
+      working_directory: environments/test
+      apply: true
+    secrets:
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_ORGANIZATION_NAME: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      SNOWFLAKE_ACCOUNT_NAME: ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_EDC_DB: ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_SOURCE_DB: ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_TARGET_ACCOUNT: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_ACCESS_DB: ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_ACCESS_SCHEMA: ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_ACCESS_TABLE: ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_WAREHOUSE: ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_TARGET_LAG_MAXIMUM_DURATION: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+
+  deploy-preprod-na:
+    name: Deploy — preprod-na
+    needs: deploy-test
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: preprod-na
+      working_directory: environments/preprod-na
+      apply: true
+    secrets:
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_ORGANIZATION_NAME: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      SNOWFLAKE_ACCOUNT_NAME: ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_EDC_DB: ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_SOURCE_DB: ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_TARGET_ACCOUNT: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_ACCESS_DB: ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_ACCESS_SCHEMA: ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_ACCESS_TABLE: ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_WAREHOUSE: ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_TARGET_LAG_MAXIMUM_DURATION: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+
+  deploy-preprod-apac:
+    name: Deploy — preprod-apac
+    needs: deploy-test
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: preprod-apac
+      working_directory: environments/preprod-apac
+      apply: true
+    secrets:
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_ORGANIZATION_NAME: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      SNOWFLAKE_ACCOUNT_NAME: ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_EDC_DB: ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_SOURCE_DB: ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_TARGET_ACCOUNT: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_ACCESS_DB: ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_ACCESS_SCHEMA: ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_ACCESS_TABLE: ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_WAREHOUSE: ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_TARGET_LAG_MAXIMUM_DURATION: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+
+  gate:
+    name: Gate approval
+    runs-on: ubuntu-latest
+    needs:
+      - deploy-preprod-na
+      - deploy-preprod-apac
+    environment: prod-gate
+    steps:
+      - name: Await approval
+        run: echo "Approved to continue to production."
+
+  deploy-prod-na:
+    name: Deploy — prod-na
+    needs: gate
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: prod-na
+      working_directory: environments/prod-na
+      apply: true
+    secrets:
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_ORGANIZATION_NAME: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      SNOWFLAKE_ACCOUNT_NAME: ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_EDC_DB: ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_SOURCE_DB: ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_TARGET_ACCOUNT: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_ACCESS_DB: ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_ACCESS_SCHEMA: ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_ACCESS_TABLE: ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_WAREHOUSE: ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_TARGET_LAG_MAXIMUM_DURATION: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+
+  deploy-prod-apac:
+    name: Deploy — prod-apac
+    needs: gate
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: prod-apac
+      working_directory: environments/prod-apac
+      apply: true
+    secrets:
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_ORGANIZATION_NAME: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      SNOWFLAKE_ACCOUNT_NAME: ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_EDC_DB: ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_SOURCE_DB: ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_TARGET_ACCOUNT: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_ACCESS_DB: ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_ACCESS_SCHEMA: ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_ACCESS_TABLE: ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_WAREHOUSE: ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_TARGET_LAG_MAXIMUM_DURATION: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
