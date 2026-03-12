@@ -18,6 +18,7 @@ variable "access_table" { type = string }
 variable "target_account" {
   description = "Account keys to filter deployable tables e.g. [\"apac\", \"na\"]"
   type        = list(string)
+  default     = ["apac"]
 }
 
 variable "default_account" {
