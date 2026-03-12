@@ -1,0 +1,68 @@
+name: Terraform Reusable
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      working_directory:
+        required: true
+        type: string
+      apply:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  terraform:
+    name: Terraform ${{ inputs.apply && 'Apply' || 'Plan' }} — ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    permissions:
+      contents: read
+
+    env:
+      TF_VAR_snowflake_organization_name: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
+      TF_VAR_snowflake_account_name: ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
+      TF_VAR_snowflake_user: ${{ secrets.SNOWFLAKE_USER }}
+      TF_VAR_snowflake_role: ${{ secrets.SNOWFLAKE_ROLE }}
+      TF_VAR_snowflake_authenticator: SNOWFLAKE_JWT
+      TF_VAR_snowflake_private_key: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+
+      TF_VAR_edc_db: ${{ secrets.TF_VAR_EDC_DB }}
+      TF_VAR_source_db: ${{ secrets.TF_VAR_SOURCE_DB }}
+      TF_VAR_target_account: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
+      TF_VAR_access_db: ${{ secrets.TF_VAR_ACCESS_DB }}
+      TF_VAR_access_schema: ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
+      TF_VAR_access_table: ${{ secrets.TF_VAR_ACCESS_TABLE }}
+      TF_VAR_warehouse: ${{ secrets.TF_VAR_WAREHOUSE }}
+      TF_VAR_target_lag_maximum_duration: ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.7"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ${{ inputs.working_directory }}
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: ${{ inputs.working_directory }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ inputs.working_directory }}
+        run: terraform plan -no-color -input=false -out=tfplan
+
+      - name: Terraform Apply
+        if: ${{ inputs.apply }}
+        working-directory: ${{ inputs.working_directory }}
+        run: terraform apply -auto-approve tfplan

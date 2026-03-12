@@ -1,0 +1,50 @@
+name: Terraform PR CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'environments/**'
+      - 'modules/**'
+      - 'sql/**'
+
+concurrency:
+  group: terraform-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plan-dev:
+    name: Plan — dev
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: dev
+      working_directory: environments/dev
+      apply: false
+    secrets: inherit
+
+  plan-test:
+    name: Plan — test
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: test
+      working_directory: environments/test
+      apply: false
+    secrets: inherit
+
+  plan-preprod-na:
+    name: Plan — preprod-na
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: preprod-na
+      working_directory: environments/preprod-na
+      apply: false
+    secrets: inherit
+
+  plan-preprod-apac:
+    name: Plan — preprod-apac
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: preprod-apac
+      working_directory: environments/preprod-apac
+      apply: false
+    secrets: inherit
