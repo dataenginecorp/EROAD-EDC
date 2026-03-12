@@ -7,7 +7,7 @@ module "region_cloud" {
 }
 
 module "edc_db_schema" {
-  source = "../../modules/snowflake-edc-db-schema"
+  source = "../modules/snowflake-edc-db-schema"
 
   edc_db      = var.edc_db
   edc_regions = module.region_cloud.schema_names
@@ -29,7 +29,7 @@ module "wh" {
 }
 
 module "edc_dynamic_tables" {
-  source    = "../../modules/snowflake-edc-dynamic-tables"
+  source    = "../modules/snowflake-edc-dynamic-tables"
   target_account  = var.target_account
   edc_db          = var.edc_db
   sql_tables_root = "../../sql/tables"
@@ -50,11 +50,11 @@ module "edc_dynamic_tables" {
                 module.wh]        
 }
 module "edc_secure_views" {
-  source    = "../../modules/snowflake-edc-secure-views"
+  source    = "../modules/snowflake-edc-secure-views"
 
   target_account              = var.target_account
   edc_db          = var.edc_db
-  sql_tables_root = "../../sql/tables"
+  sql_tables_root = "../sql/tables"
 
   dt_module_output = module.edc_dynamic_tables.dynamic_tables
 
@@ -72,7 +72,7 @@ module "edc_secure_views" {
 
 module "edc_roles" {
 
-  source = "../../modules/snowflake-edc-database-roles"
+  source = "../modules/snowflake-edc-database-roles"
 
   providers = {
     snowflake = snowflake
@@ -85,7 +85,7 @@ module "edc_roles" {
 }
 
 module "edc_schema_shares" {
-  source    = "../../modules/snowflake-edc-shares"
+  source    = "../modules/snowflake-edc-shares"
   providers = { snowflake = snowflake }
 
   database_name     = var.edc_db
@@ -106,7 +106,7 @@ module "edc_schema_shares" {
 }
 
 module "edc_listings" {
-  source    = "../../modules/snowflake-edc-listings"
+  source    = "../modules/snowflake-edc-listings"
 
   comment_prefix = "EDC listing"
 
