@@ -56,8 +56,7 @@ jobs:
       TF_VAR_snowflake_user: ${{ secrets.SNOWFLAKE_USER }}
       TF_VAR_snowflake_role: ${{ secrets.SNOWFLAKE_ROLE }}
       TF_VAR_snowflake_authenticator: SNOWFLAKE_JWT
-      TF_VAR_snowflake_private_key_path: /tmp/snowflake_key.p8
-
+      TF_VAR_snowflake_private_key: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
       TF_VAR_edc_db: ${{ secrets.TF_VAR_EDC_DB }}
       TF_VAR_source_db: ${{ secrets.TF_VAR_SOURCE_DB }}
       TF_VAR_target_account: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
