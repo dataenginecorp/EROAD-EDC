@@ -46,7 +46,7 @@ jobs:
       github.event_name == 'pull_request' ||
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
-    uses: ./.github/workflows/_terraform-reusable.yml
+    uses: ./.github/workflows/terraform-reusable.yml
     secrets: inherit
     with:
       environment: dev
@@ -63,7 +63,7 @@ jobs:
         github.event_name == 'push' ||
         (github.event_name == 'workflow_dispatch' && inputs.environment == 'test')
       )
-    uses: ./.github/workflows/_terraform-reusable.yml
+    uses: ./.github/workflows/terraform-reusable.yml
     secrets: inherit
     with:
       environment: test
@@ -82,7 +82,7 @@ jobs:
         )) ||
         (github.event_name == 'workflow_dispatch' && inputs.environment == 'preprod-apac')
       )
-    uses: ./.github/workflows/_terraform-reusable.yml
+    uses: ./.github/workflows/terraform-reusable.yml
     secrets: inherit
     with:
       environment: preprod-apac
@@ -101,7 +101,7 @@ jobs:
         )) ||
         (github.event_name == 'workflow_dispatch' && inputs.environment == 'preprod-na')
       )
-    uses: ./.github/workflows/_terraform-reusable.yml
+    uses: ./.github/workflows/terraform-reusable.yml
     secrets: inherit
     with:
       environment: preprod-na
@@ -115,7 +115,7 @@ jobs:
     if: |
       always() && needs.preprod-apac.result == 'success' &&
       github.event_name == 'workflow_dispatch' && inputs.environment == 'prod-apac'
-    uses: ./.github/workflows/_terraform-reusable.yml
+    uses: ./.github/workflows/terraform-reusable.yml
     secrets: inherit
     with:
       environment: prod-apac
@@ -129,7 +129,7 @@ jobs:
     if: |
       always() && needs.preprod-na.result == 'success' &&
       github.event_name == 'workflow_dispatch' && inputs.environment == 'prod-na'
-    uses: ./.github/workflows/_terraform-reusable.yml
+    uses: ./.github/workflows/terraform-reusable.yml
     secrets: inherit
     with:
       environment: prod-na
