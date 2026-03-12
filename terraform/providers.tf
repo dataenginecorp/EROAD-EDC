@@ -16,3 +16,7 @@ provider "snowflake" {
   ]
   
 }
+
+terraform {
+  backend "local" {}
+}

@@ -1,16 +1,5 @@
 name: Terraform CI/CD Pipeline
 
-# ─────────────────────────────────────────────────────────────────────────────
-# BRANCH STRATEGY
-#
-# main                →  apply dev → test
-# release/v*          →  apply dev → test → preprod-apac + preprod-na
-# release/apac/v*     →  apply dev → test → preprod-apac only
-# release/na/v*       →  apply dev → test → preprod-na only
-# pull_request        →  plan only (no apply)
-# workflow_dispatch   →  manually run any environment with plan/apply/destroy
-# ─────────────────────────────────────────────────────────────────────────────
-
 on:
   push:
     branches: [main, release/**]
@@ -40,7 +29,6 @@ concurrency:
 
 jobs:
 
-  # ── DEV ─────────────────────────────────────────────────────────────────────
   dev:
     if: |
       github.event_name == 'pull_request' ||
@@ -50,12 +38,12 @@ jobs:
     secrets: inherit
     with:
       environment: dev
-      working_directory: ./terraform                
-      var_file: ../environments/dev/terraform.tfvars  
+      working_directory: ./terraform
+      var_file: ../environments/dev/terraform.tfvars
+      backend_config: ../environments/dev/backend.hcl
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
-  # ── TEST ─────────────────────────────────────────────────────────────────────
   test:
     needs: dev
     if: |
@@ -68,12 +56,12 @@ jobs:
     secrets: inherit
     with:
       environment: test
-      working_directory: ./environments/test
-      var_file: ../environments/dev/terraform.tfvars  
+      working_directory: ./terraform
+      var_file: ../environments/test/terraform.tfvars
+      backend_config: ../environments/test/backend.hcl
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
-  # ── PREPROD APAC ─────────────────────────────────────────────────────────────
   preprod-apac:
     needs: test
     if: |
@@ -88,12 +76,12 @@ jobs:
     secrets: inherit
     with:
       environment: preprod-apac
-      working_directory: ./environments/preprod-apac
-      var_file: ../environments/dev/terraform.tfvars  
+      working_directory: ./terraform
+      var_file: ../environments/preprod-apac/terraform.tfvars
+      backend_config: ../environments/preprod-apac/backend.hcl
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
-  # ── PREPROD NA ───────────────────────────────────────────────────────────────
   preprod-na:
     needs: test
     if: |
@@ -108,12 +96,12 @@ jobs:
     secrets: inherit
     with:
       environment: preprod-na
-      working_directory: ./environments/preprod-na
-      var_file: ../environments/dev/terraform.tfvars  
+      working_directory: ./terraform
+      var_file: ../environments/preprod-na/terraform.tfvars
+      backend_config: ../environments/preprod-na/backend.hcl
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
-  # ── PROD APAC — manual only ──────────────────────────────────────────────────
   prod-apac:
     needs: [preprod-apac, preprod-na]
     if: |
@@ -123,12 +111,12 @@ jobs:
     secrets: inherit
     with:
       environment: prod-apac
-      working_directory: ./environments/prod-apac
-      var_file: ../environments/dev/terraform.tfvars  
+      working_directory: ./terraform
+      var_file: ../environments/prod-apac/terraform.tfvars
+      backend_config: ../environments/prod-apac/backend.hcl
       apply: ${{ fromJSON(inputs.action == 'apply') }}
       destroy: ${{ fromJSON(inputs.action == 'destroy') }}
 
-  # ── PROD NA — manual only ────────────────────────────────────────────────────
   prod-na:
     needs: [preprod-apac, preprod-na]
     if: |
@@ -138,7 +126,8 @@ jobs:
     secrets: inherit
     with:
       environment: prod-na
-      working_directory: ./environments/prod-na
-      var_file: ../environments/dev/terraform.tfvars  
+      working_directory: ./terraform
+      var_file: ../environments/prod-na/terraform.tfvars
+      backend_config: ../environments/prod-na/backend.hcl
       apply: ${{ fromJSON(inputs.action == 'apply') }}
       destroy: ${{ fromJSON(inputs.action == 'destroy') }}
