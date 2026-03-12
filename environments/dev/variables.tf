@@ -4,8 +4,6 @@ variable "snowflake_user" { type = string }
 variable "snowflake_role" { type = string }
 variable "snowflake_authenticator" { type = string }
 
-variable "snowflake_private_key_path" { type = string } # relative to env/dev
-
 variable "edc_db" { type = string }
 
 variable "source_db" { type = string }
