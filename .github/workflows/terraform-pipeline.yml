@@ -1,4 +1,4 @@
-name: Terraform CI/CD Pipeline 1
+name: Terraform CI/CD Pipeline
 
 # ─────────────────────────────────────────────────────────────────────────────
 # BRANCH STRATEGY
@@ -8,7 +8,7 @@ name: Terraform CI/CD Pipeline 1
 # release/apac/v*     →  apply dev → test → preprod-apac only
 # release/na/v*       →  apply dev → test → preprod-na only
 # pull_request        →  plan only (no apply)
-# workflow_dispatch   →  manually run any environment with plan or apply
+# workflow_dispatch   →  manually run any environment with plan/apply/destroy
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -31,7 +31,7 @@ on:
         description: Action
         required: true
         type: choice
-        options: [plan, apply]
+        options: [plan, apply, destroy]
         default: plan
 
 concurrency:
@@ -51,6 +51,7 @@ jobs:
       environment: dev
       working_directory: ./terraform
       apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
 
   # ── TEST ─────────────────────────────────────────────────────────────────────
   test:
@@ -66,6 +67,7 @@ jobs:
       environment: test
       working_directory: ./terraform
       apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
 
   # ── PREPROD APAC ─────────────────────────────────────────────────────────────
   preprod-apac:
@@ -83,6 +85,7 @@ jobs:
       environment: preprod-apac
       working_directory: ./terraform
       apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
 
   # ── PREPROD NA ───────────────────────────────────────────────────────────────
   preprod-na:
@@ -100,6 +103,7 @@ jobs:
       environment: preprod-na
       working_directory: ./terraform
       apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
 
   # ── PROD APAC — manual only ──────────────────────────────────────────────────
   prod-apac:
@@ -112,6 +116,7 @@ jobs:
       environment: prod-apac
       working_directory: ./terraform
       apply: ${{ inputs.action == 'apply' }}
+      destroy: ${{ inputs.action == 'destroy' }}
 
   # ── PROD NA — manual only ────────────────────────────────────────────────────
   prod-na:
@@ -124,3 +129,4 @@ jobs:
       environment: prod-na
       working_directory: ./terraform
       apply: ${{ inputs.action == 'apply' }}
+      destroy: ${{ inputs.action == 'destroy' }}

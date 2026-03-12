@@ -13,10 +13,14 @@ on:
         required: false
         type: boolean
         default: false
+      destroy:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   terraform:
-    name: Terraform ${{ inputs.apply && 'Apply' || 'Plan' }} — ${{ inputs.environment }}
+    name: Terraform ${{ inputs.apply && 'Apply' || inputs.destroy && 'Destroy' || 'Plan' }} — ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
 
@@ -59,6 +63,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        if: ${{ !inputs.destroy }}
         working-directory: ${{ inputs.working_directory }}
         run: terraform plan -no-color -input=false -out=tfplan
 
@@ -66,3 +71,8 @@ jobs:
         if: ${{ inputs.apply }}
         working-directory: ${{ inputs.working_directory }}
         run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: ${{ inputs.destroy }}
+        working-directory: ${{ inputs.working_directory }}
+        run: terraform destroy -auto-approve -input=false
