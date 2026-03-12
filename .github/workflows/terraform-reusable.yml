@@ -17,6 +17,9 @@ on:
         required: false
         type: boolean
         default: false
+      var_file:
+        type: string
+        required: true
 
 jobs:
   terraform:
