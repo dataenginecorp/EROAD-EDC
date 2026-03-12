@@ -1,0 +1,120 @@
+# .github/workflows/terraform-pipeline.yml
+name: Terraform CI/CD
+
+on:
+  push:
+    branches: [main, release/**]
+    paths: [terraform/**, environments/**, modules/**]
+
+  pull_request:
+    branches: [main, release/**]
+    paths: [terraform/**, environments/**, modules/**]
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        required: true
+        type: choice
+        options: [dev, test, preprod-apac, preprod-na, prod-apac, prod-na]
+      action:
+        required: true
+        type: choice
+        options: [plan, apply, destroy]
+        default: plan
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+
+  # ── DEV ────────────────────────────────────────────────────────────────────
+  dev:
+    if: github.event_name != 'workflow_dispatch' || inputs.environment == 'dev'
+    uses: ./.github/workflows/_terraform-reusable2.yml
+    with:
+      environment: dev
+      apply: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+  # ── TEST ───────────────────────────────────────────────────────────────────
+  test:
+    needs: dev
+    if: |
+      always() && needs.dev.result == 'success' &&
+      (github.event_name != 'workflow_dispatch' || inputs.environment == 'test')
+    uses: ./.github/workflows/_terraform-reusable2.yml
+    with:
+      environment: test
+      apply: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+  # ── PREPROD (parallel APAC + NA) ───────────────────────────────────────────
+  preprod-apac:
+    needs: test
+    if: |
+      always() && needs.test.result == 'success' &&
+      (github.event_name != 'workflow_dispatch' || inputs.environment == 'preprod-apac') &&
+      (startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/_terraform-reusable2.yml
+    with:
+      environment: preprod-apac
+      apply: ${{ startsWith(github.ref, 'refs/heads/release/') || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+  preprod-na:
+    needs: test
+    if: |
+      always() && needs.test.result == 'success' &&
+      (github.event_name != 'workflow_dispatch' || inputs.environment == 'preprod-na') &&
+      (startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/_terraform-reusable2.yml
+    with:
+      environment: preprod-na
+      apply: ${{ startsWith(github.ref, 'refs/heads/release/') || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+  # ── PROD (parallel APAC + NA, manual only) ─────────────────────────────────
+  prod-apac:
+    needs: [preprod-apac, preprod-na]
+    if: |
+      always() &&
+      needs.preprod-apac.result == 'success' && needs.preprod-na.result == 'success' &&
+      (github.event_name != 'workflow_dispatch' || inputs.environment == 'prod-apac') &&
+      (startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/_terraform-reusable2.yml
+    with:
+      environment: prod-apac
+      apply: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+  prod-na:
+    needs: [preprod-apac, preprod-na]
+    if: |
+      always() &&
+      needs.preprod-apac.result == 'success' && needs.preprod-na.result == 'success' &&
+      (github.event_name != 'workflow_dispatch' || inputs.environment == 'prod-na') &&
+      (startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/_terraform-reusable2.yml
+    with:
+      environment: prod-na
+      apply: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
