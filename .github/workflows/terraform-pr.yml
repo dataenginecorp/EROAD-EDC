@@ -1,12 +1,4 @@
-
-name: Terraform Plan (PR)
-
-# Triggers on every PR targeting main
-# All 3 plans must pass before merge is allowed
-# Configure in: Settings → Branches → main → Require status checks:
-#   - "Terraform Plan / Plan — dev"
-#   - "Terraform Plan / Plan — test"
-#   - "Terraform Plan / Plan — prod"
+name: Terraform PR CI
 
 on:
   pull_request:
@@ -16,6 +8,10 @@ on:
       - 'modules/**'
       - 'sql/**'
 
+concurrency:
+  group: terraform-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   plan-dev:
     name: Plan — dev
@@ -24,17 +20,31 @@ jobs:
       environment: dev
       working_directory: environments/dev
       apply: false
-    secrets:
-      SNOWFLAKE_PRIVATE_KEY:               ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
-      SNOWFLAKE_ORGANIZATION_NAME:         ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
-      SNOWFLAKE_ACCOUNT_NAME:              ${{ secrets.SNOWFLAKE_ACCOUNT_NAME }}
-      SNOWFLAKE_USER:                      ${{ secrets.SNOWFLAKE_USER }}
-      SNOWFLAKE_ROLE:                      ${{ secrets.SNOWFLAKE_ROLE }}
-      TF_VAR_EDC_DB:                       ${{ secrets.TF_VAR_EDC_DB }}
-      TF_VAR_SOURCE_DB:                    ${{ secrets.TF_VAR_SOURCE_DB }}
-      TF_VAR_TARGET_ACCOUNT:               ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
-      TF_VAR_ACCESS_DB:                    ${{ secrets.TF_VAR_ACCESS_DB }}
-      TF_VAR_ACCESS_SCHEMA:                ${{ secrets.TF_VAR_ACCESS_SCHEMA }}
-      TF_VAR_ACCESS_TABLE:                 ${{ secrets.TF_VAR_ACCESS_TABLE }}
-      TF_VAR_WAREHOUSE:                    ${{ secrets.TF_VAR_WAREHOUSE }}
-      TF_VAR_TARGET_LAG_MAXIMUM_DURATION:  ${{ secrets.TF_VAR_TARGET_LAG_MAXIMUM_DURATION }}
+    secrets: inherit
+
+  plan-test:
+    name: Plan — test
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: test
+      working_directory: environments/test
+      apply: false
+    secrets: inherit
+
+  plan-preprod-na:
+    name: Plan — preprod-na
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: preprod-na
+      working_directory: environments/preprod-na
+      apply: false
+    secrets: inherit
+
+  plan-preprod-apac:
+    name: Plan — preprod-apac
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: preprod-apac
+      working_directory: environments/preprod-apac
+      apply: false
+    secrets: inherit
