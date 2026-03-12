@@ -1,6 +1,7 @@
 locals {
   prefix = trimspace(var.role_prefix) == "" ? "" : "${upper(trimspace(var.role_prefix))}_"
 
+
   roles = {
     read       = "${local.prefix}${var.database_name}_READ"
     read_write = "${local.prefix}${var.database_name}_READ_WRITE"
