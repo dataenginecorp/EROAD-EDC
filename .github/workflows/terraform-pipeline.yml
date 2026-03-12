@@ -69,6 +69,7 @@ jobs:
     with:
       environment: test
       working_directory: ./environments/test
+      var_file: ../environments/dev/terraform.tfvars  
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
@@ -88,6 +89,7 @@ jobs:
     with:
       environment: preprod-apac
       working_directory: ./environments/preprod-apac
+      var_file: ../environments/dev/terraform.tfvars  
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
@@ -107,6 +109,7 @@ jobs:
     with:
       environment: preprod-na
       working_directory: ./environments/preprod-na
+      var_file: ../environments/dev/terraform.tfvars  
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
@@ -121,6 +124,7 @@ jobs:
     with:
       environment: prod-apac
       working_directory: ./environments/prod-apac
+      var_file: ../environments/dev/terraform.tfvars  
       apply: ${{ fromJSON(inputs.action == 'apply') }}
       destroy: ${{ fromJSON(inputs.action == 'destroy') }}
 
@@ -135,5 +139,6 @@ jobs:
     with:
       environment: prod-na
       working_directory: ./environments/prod-na
+      var_file: ../environments/dev/terraform.tfvars  
       apply: ${{ fromJSON(inputs.action == 'apply') }}
       destroy: ${{ fromJSON(inputs.action == 'destroy') }}
