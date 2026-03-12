@@ -50,7 +50,8 @@ jobs:
     secrets: inherit
     with:
       environment: dev
-      working_directory: ./environments/dev
+      working_directory: ./terraform                
+      var_file: ../environments/dev/terraform.tfvars  
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
