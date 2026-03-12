@@ -6,49 +6,22 @@ on:
       environment:
         required: true
         type: string
-        description: "Target environment (dev, test, prod)"
       working_directory:
         required: true
         type: string
-        description: "Path to the Terraform environment folder"
       apply:
         required: false
         type: boolean
         default: false
-        description: "Whether to run terraform apply"
-    secrets:
-      SNOWFLAKE_PRIVATE_KEY:
-        required: true
-      SNOWFLAKE_ORGANIZATION_NAME:
-        required: true
-      SNOWFLAKE_ACCOUNT_NAME:
-        required: true
-      SNOWFLAKE_USER:
-        required: true
-      SNOWFLAKE_ROLE:
-        required: true
-      TF_VAR_EDC_DB:
-        required: true
-      TF_VAR_SOURCE_DB:
-        required: true
-      TF_VAR_TARGET_ACCOUNT:
-        required: true
-      TF_VAR_ACCESS_DB:
-        required: true
-      TF_VAR_ACCESS_SCHEMA:
-        required: true
-      TF_VAR_ACCESS_TABLE:
-        required: true
-      TF_VAR_WAREHOUSE:
-        required: true
-      TF_VAR_TARGET_LAG_MAXIMUM_DURATION:
-        required: true
 
 jobs:
   terraform:
     name: Terraform ${{ inputs.apply && 'Apply' || 'Plan' }} — ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+
+    permissions:
+      contents: read
 
     env:
       TF_VAR_snowflake_organization_name: ${{ secrets.SNOWFLAKE_ORGANIZATION_NAME }}
@@ -57,6 +30,7 @@ jobs:
       TF_VAR_snowflake_role: ${{ secrets.SNOWFLAKE_ROLE }}
       TF_VAR_snowflake_authenticator: SNOWFLAKE_JWT
       TF_VAR_snowflake_private_key: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+
       TF_VAR_edc_db: ${{ secrets.TF_VAR_EDC_DB }}
       TF_VAR_source_db: ${{ secrets.TF_VAR_SOURCE_DB }}
       TF_VAR_target_account: ${{ secrets.TF_VAR_TARGET_ACCOUNT }}
@@ -70,17 +44,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Write private key to file
-        shell: bash
-        run: |
-          printf '%s' "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > /tmp/snowflake_key.p8
-          chmod 600 /tmp/snowflake_key.p8
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "~1.7"
-          terraform_wrapper: true
+          terraform_wrapper: false
 
       - name: Terraform Init
         working-directory: ${{ inputs.working_directory }}
@@ -91,33 +59,6 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        id: plan
-        if: ${{ !inputs.apply }}
-        working-directory: ${{ inputs.working_directory }}
-        continue-on-error: true
-        run: terraform plan -no-color -input=false -out=tfplan -detailed-exitcode
-
-      - name: Fail if plan errored
-        if: ${{ !inputs.apply && steps.plan.outputs.exitcode == '1' }}
-        run: |
-          echo "❌ Terraform plan failed for ${{ inputs.environment }}."
-          exit 1
-
-      - name: Plan summary
-        if: ${{ !inputs.apply }}
-        run: |
-          echo "Terraform plan exit code: ${{ steps.plan.outputs.exitcode }}"
-          if [ "${{ steps.plan.outputs.exitcode }}" = "0" ]; then
-            echo "No changes detected."
-          elif [ "${{ steps.plan.outputs.exitcode }}" = "2" ]; then
-            echo "Changes detected."
-          else
-            echo "Plan failed."
-          fi
-
-      - name: Terraform Plan (for apply)
-        id: apply_plan
-        if: ${{ inputs.apply }}
         working-directory: ${{ inputs.working_directory }}
         run: terraform plan -no-color -input=false -out=tfplan
 
@@ -125,7 +66,3 @@ jobs:
         if: ${{ inputs.apply }}
         working-directory: ${{ inputs.working_directory }}
         run: terraform apply -auto-approve tfplan
-
-      - name: Clean up private key
-        if: always()
-        run: rm -f /tmp/snowflake_key.p8
