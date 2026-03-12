@@ -27,3 +27,8 @@ variable "default_account" {
   type        = string
   default     = ""
 }
+
+variable "snowflake_private_key" {
+  type      = string
+  sensitive = true
+}
