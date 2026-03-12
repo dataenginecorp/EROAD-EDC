@@ -1,5 +1,5 @@
 module "region_cloud" {
-  source    = "../../modules/snowflake-edc-region-cloud-query"
+  source    = "../modules/snowflake-edc-region-cloud-query"
 
   access_db     = var.access_db
   access_schema = var.access_schema
@@ -18,7 +18,7 @@ module "edc_db_schema" {
 }
 
 module "wh" {
-  source    = "../../modules/snowflake-edc-warehouse"
+  source    = "../modules/snowflake-edc-warehouse"
 
   warehouse_name = "WH_EDC_DEV"
   warehouse_size = "XSMALL"
@@ -32,7 +32,7 @@ module "edc_dynamic_tables" {
   source    = "../modules/snowflake-edc-dynamic-tables"
   target_account  = var.target_account
   edc_db          = var.edc_db
-  sql_tables_root = "../../sql/tables"
+  sql_tables_root = "../sql/tables"
 
   region_cloud_rows = module.region_cloud.region_cloud_rows
 
