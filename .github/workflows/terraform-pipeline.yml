@@ -46,12 +46,13 @@ jobs:
       github.event_name == 'pull_request' ||
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
-    uses: ./.github/workflows/terraform-reusable.yml
+    uses: ./.github/workflows/_terraform-reusable.yml
+    secrets: inherit
     with:
       environment: dev
       working_directory: ./environments/dev
-      apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
-      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
+      apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
+      destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
   # ── TEST ─────────────────────────────────────────────────────────────────────
   test:
@@ -62,12 +63,13 @@ jobs:
         github.event_name == 'push' ||
         (github.event_name == 'workflow_dispatch' && inputs.environment == 'test')
       )
-    uses: ./.github/workflows/terraform-reusable.yml
+    uses: ./.github/workflows/_terraform-reusable.yml
+    secrets: inherit
     with:
       environment: test
-      working_directory: ./terraform
-      apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
-      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
+      working_directory: ./environments/test
+      apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
+      destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
   # ── PREPROD APAC ─────────────────────────────────────────────────────────────
   preprod-apac:
@@ -80,12 +82,13 @@ jobs:
         )) ||
         (github.event_name == 'workflow_dispatch' && inputs.environment == 'preprod-apac')
       )
-    uses: ./.github/workflows/terraform-reusable.yml
+    uses: ./.github/workflows/_terraform-reusable.yml
+    secrets: inherit
     with:
       environment: preprod-apac
-      working_directory: ./terraform
-      apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
-      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
+      working_directory: ./environments/preprod-apac
+      apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
+      destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
   # ── PREPROD NA ───────────────────────────────────────────────────────────────
   preprod-na:
@@ -98,12 +101,13 @@ jobs:
         )) ||
         (github.event_name == 'workflow_dispatch' && inputs.environment == 'preprod-na')
       )
-    uses: ./.github/workflows/terraform-reusable.yml
+    uses: ./.github/workflows/_terraform-reusable.yml
+    secrets: inherit
     with:
       environment: preprod-na
-      working_directory: ./terraform
-      apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
-      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
+      working_directory: ./environments/preprod-na
+      apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
+      destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
   # ── PROD APAC — manual only ──────────────────────────────────────────────────
   prod-apac:
@@ -111,12 +115,13 @@ jobs:
     if: |
       always() && needs.preprod-apac.result == 'success' &&
       github.event_name == 'workflow_dispatch' && inputs.environment == 'prod-apac'
-    uses: ./.github/workflows/terraform-reusable.yml
+    uses: ./.github/workflows/_terraform-reusable.yml
+    secrets: inherit
     with:
       environment: prod-apac
-      working_directory: ./terraform
-      apply: ${{ inputs.action == 'apply' }}
-      destroy: ${{ inputs.action == 'destroy' }}
+      working_directory: ./environments/prod-apac
+      apply: ${{ fromJSON(inputs.action == 'apply') }}
+      destroy: ${{ fromJSON(inputs.action == 'destroy') }}
 
   # ── PROD NA — manual only ────────────────────────────────────────────────────
   prod-na:
@@ -124,9 +129,10 @@ jobs:
     if: |
       always() && needs.preprod-na.result == 'success' &&
       github.event_name == 'workflow_dispatch' && inputs.environment == 'prod-na'
-    uses: ./.github/workflows/terraform-reusable.yml
+    uses: ./.github/workflows/_terraform-reusable.yml
+    secrets: inherit
     with:
       environment: prod-na
-      working_directory: ./terraform
-      apply: ${{ inputs.action == 'apply' }}
-      destroy: ${{ inputs.action == 'destroy' }}
+      working_directory: ./environments/prod-na
+      apply: ${{ fromJSON(inputs.action == 'apply') }}
+      destroy: ${{ fromJSON(inputs.action == 'destroy') }}
