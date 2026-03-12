@@ -8,7 +8,7 @@ name: Terraform CI/CD Pipeline
 # release/apac/v*     →  apply dev → test → preprod-apac only
 # release/na/v*       →  apply dev → test → preprod-na only
 # pull_request        →  plan only (no apply)
-# workflow_dispatch   →  manually run any environment with plan or apply
+# workflow_dispatch   →  manually run any environment with plan/apply/destroy
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -31,7 +31,7 @@ on:
         description: Action
         required: true
         type: choice
-        options: [plan, apply]
+        options: [plan, apply, destroy]
         default: plan
 
 concurrency:
@@ -49,8 +49,12 @@ jobs:
     uses: ./.github/workflows/_terraform-reusable.yml
     with:
       environment: dev
-      working_directory: ./terraform
       apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.DEV_AWS_REGION }}
 
   # ── TEST ─────────────────────────────────────────────────────────────────────
   test:
@@ -64,8 +68,12 @@ jobs:
     uses: ./.github/workflows/_terraform-reusable.yml
     with:
       environment: test
-      working_directory: ./terraform
       apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.TEST_AWS_REGION }}
 
   # ── PREPROD APAC ─────────────────────────────────────────────────────────────
   preprod-apac:
@@ -81,8 +89,12 @@ jobs:
     uses: ./.github/workflows/_terraform-reusable.yml
     with:
       environment: preprod-apac
-      working_directory: ./terraform
       apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.PREPROD_APAC_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PREPROD_APAC_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.PREPROD_APAC_AWS_REGION }}
 
   # ── PREPROD NA ───────────────────────────────────────────────────────────────
   preprod-na:
@@ -98,8 +110,12 @@ jobs:
     uses: ./.github/workflows/_terraform-reusable.yml
     with:
       environment: preprod-na
-      working_directory: ./terraform
       apply: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
+      destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.PREPROD_NA_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PREPROD_NA_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.PREPROD_NA_AWS_REGION }}
 
   # ── PROD APAC — manual only ──────────────────────────────────────────────────
   prod-apac:
@@ -110,8 +126,12 @@ jobs:
     uses: ./.github/workflows/_terraform-reusable.yml
     with:
       environment: prod-apac
-      working_directory: ./terraform
       apply: ${{ inputs.action == 'apply' }}
+      destroy: ${{ inputs.action == 'destroy' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.PROD_APAC_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_APAC_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.PROD_APAC_AWS_REGION }}
 
   # ── PROD NA — manual only ────────────────────────────────────────────────────
   prod-na:
@@ -122,5 +142,9 @@ jobs:
     uses: ./.github/workflows/_terraform-reusable.yml
     with:
       environment: prod-na
-      working_directory: ./terraform
       apply: ${{ inputs.action == 'apply' }}
+      destroy: ${{ inputs.action == 'destroy' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.PROD_NA_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_NA_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.PROD_NA_AWS_REGION }}
