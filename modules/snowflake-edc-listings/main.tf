@@ -13,6 +13,7 @@ listing_terms:
   type: OFFLINE
 EOT
   }
+  
 
   publish = false
   comment = var.comment_prefix != "" ? "${var.comment_prefix} - ${each.key}" : null
