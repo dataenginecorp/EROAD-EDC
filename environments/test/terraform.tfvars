@@ -6,7 +6,7 @@ snowflake_role              = "ACCOUNTADMIN"
 snowflake_authenticator     = "SNOWFLAKE_JWT"
 
 # ── EDC Database ──────────────────────────────────────────────────
-edc_db = "DEV_EDC"
+edc_db = "TEST_EDC"
 
 # ── Source Database ───────────────────────────────────────────────
 source_db     = "DEV"
@@ -23,5 +23,4 @@ target_lag_maximum_duration = "30 minutes"
 # ── Account Filtering ─────────────────────────────────────────────
 target_account = ["apac", "na"]
 
-
-warehouse_name = "WH_EDC_DEV"
+warehouse_name = "WH_EDC_TEST"

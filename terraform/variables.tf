@@ -31,3 +31,8 @@ variable "snowflake_private_key" {
   type      = string
   sensitive = true
 }
+
+variable "warehouse_name" {
+  type        = string
+  default     = ""
+}

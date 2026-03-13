@@ -20,7 +20,7 @@ module "edc_db_schema" {
 module "wh" {
   source    = "../modules/snowflake-edc-warehouse"
 
-  warehouse_name = "WH_EDC_DEV"
+  warehouse_name = var.warehouse_name
   warehouse_size = "XSMALL"
   auto_suspend   = 60
   min_cluster_count = 1
