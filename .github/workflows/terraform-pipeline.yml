@@ -27,6 +27,9 @@ concurrency:
   group: terraform-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
 
   dev:

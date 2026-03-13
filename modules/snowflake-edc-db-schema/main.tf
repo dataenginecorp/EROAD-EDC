@@ -16,6 +16,7 @@ resource "snowflake_schema" "metadata" {
   comment             = "Managed by Terraform"
 }
 
+
 resource "snowflake_schema" "edc_region" {
   for_each = toset(var.edc_regions)
 
