@@ -31,3 +31,9 @@ variable "default_account" {
   type        = string
   default     = ""
 }
+
+
+variable "admin_schema" {
+  type        = string
+  description = "Admin schema name, passed from the edc module output."
+}

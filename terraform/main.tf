@@ -65,6 +65,8 @@ module "edc_secure_views" {
   access_schema = var.access_schema
   access_table  = var.access_table
   name_prefix = "SVW"
+  
+  admin_schema = module.edc_db_schema.admin_schema_name
 
   depends_on = [module.edc_db_schema,
                 module.edc_dynamic_tables]
