@@ -103,3 +103,5 @@ resource "snowflake_dynamic_table" "admin_dt" {
 
   comment = "Managed by Terraform"
 }
+
+-- view for the mapping table

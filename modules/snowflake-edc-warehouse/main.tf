@@ -1,4 +1,4 @@
-resource "snowflake_warehouse" "this" {
+resource "snowflake_warehouse" "warehouse" {
   name                = var.warehouse_name
   warehouse_size      = var.warehouse_size
 

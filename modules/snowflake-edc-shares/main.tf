@@ -59,3 +59,5 @@ resource "snowflake_grant_privileges_to_share" "view_select" {
 
   depends_on = [snowflake_grant_privileges_to_share.schema_usage]
 }
+
+-- do grant all instead of individual grant

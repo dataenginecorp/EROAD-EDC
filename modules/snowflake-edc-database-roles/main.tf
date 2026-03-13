@@ -45,12 +45,6 @@ locals {
       }
     }
   ]...)
-
-  # Explicitly quoted FQN to avoid provider quoting bug with underscores
-  role_fqn = {
-    for key, name in local.roles :
-    key => "\"${var.database_name}\".\"${name}\""
-  }
 }
 
 ############################################
@@ -72,7 +66,7 @@ resource "snowflake_database_role" "this" {
 resource "snowflake_grant_privileges_to_database_role" "db_level" {
   for_each = local.role_db_privileges
 
-  database_role_name = local.role_fqn[each.key]
+  database_role_name = "\"${var.database_name}\".\"${snowflake_database_role.this[each.key].name}\""
   privileges         = each.value
   on_database        = var.database_name
 }
@@ -84,7 +78,7 @@ resource "snowflake_grant_privileges_to_database_role" "db_level" {
 resource "snowflake_grant_privileges_to_database_role" "schema_all" {
   for_each = local.role_schema_privileges
 
-  database_role_name = local.role_fqn[each.key]
+  database_role_name = "\"${var.database_name}\".\"${snowflake_database_role.this[each.key].name}\""
   privileges         = each.value
   on_schema {
     all_schemas_in_database = var.database_name
@@ -94,7 +88,7 @@ resource "snowflake_grant_privileges_to_database_role" "schema_all" {
 resource "snowflake_grant_privileges_to_database_role" "schema_future" {
   for_each = local.role_schema_privileges
 
-  database_role_name = local.role_fqn[each.key]
+  database_role_name = "\"${var.database_name}\".\"${snowflake_database_role.this[each.key].name}\""
   privileges         = each.value
   on_schema {
     future_schemas_in_database = var.database_name
@@ -108,7 +102,7 @@ resource "snowflake_grant_privileges_to_database_role" "schema_future" {
 resource "snowflake_grant_privileges_to_database_role" "objects_all" {
   for_each = local.role_object_grants
 
-  database_role_name = local.role_fqn[each.value.role]
+  database_role_name = "\"${var.database_name}\".\"${snowflake_database_role.this[each.value.role].name}\""
   privileges         = each.value.privileges
   on_schema_object {
     all {
@@ -121,7 +115,7 @@ resource "snowflake_grant_privileges_to_database_role" "objects_all" {
 resource "snowflake_grant_privileges_to_database_role" "objects_future" {
   for_each = local.role_object_grants
 
-  database_role_name = local.role_fqn[each.value.role]
+  database_role_name = "\"${var.database_name}\".\"${snowflake_database_role.this[each.value.role].name}\""
   privileges         = each.value.privileges
   on_schema_object {
     future {

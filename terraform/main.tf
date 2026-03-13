@@ -11,7 +11,7 @@ module "edc_db_schema" {
 
   edc_db      = var.edc_db
   edc_regions = module.region_cloud.schema_names
-  admin_schema_name   = "ADMIN"
+  admin_schema_name   = "METADATA"
   managed_access      = true
 
   depends_on = [module.region_cloud]

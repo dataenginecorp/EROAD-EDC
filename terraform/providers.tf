@@ -8,6 +8,8 @@ provider "snowflake" {
 
   private_key = var.snowflake_private_key
 
+  --pass phrase
+
   warehouse  = var.warehouse
 
   preview_features_enabled = [
