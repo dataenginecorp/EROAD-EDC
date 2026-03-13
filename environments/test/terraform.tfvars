@@ -22,5 +22,7 @@ target_lag_maximum_duration = "30 minutes"
 
 # ── Account Filtering ─────────────────────────────────────────────
 target_account = ["apac", "na"]
-
+ 
+ 
 warehouse_name = "WH_EDC_TEST"
+
