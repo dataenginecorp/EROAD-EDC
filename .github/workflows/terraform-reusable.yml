@@ -53,6 +53,14 @@ jobs:
       - name: Terraform Validate
         working-directory: ${{ inputs.working_directory }}
         run: terraform validate
+  
+      - name: Terraform Apply (region query)
+        if: ${{ inputs.apply }}
+        working-directory: ${{ inputs.working_directory }}
+        run: |
+          terraform apply -no-color -input=false -auto-approve \
+            -var-file="${{ inputs.var_file }}" \
+            -target=module.region_cloud.snowflake_execute.region_cloud
 
       - name: Terraform Plan
         if: ${{ !inputs.destroy }}
