@@ -15,6 +15,9 @@ on:
       backend_config:
         required: true
         type: string
+      state_path:
+        required: true
+        type: string
       apply:
         required: false
         type: boolean
@@ -31,7 +34,7 @@ jobs:
     environment: ${{ inputs.environment }}
 
     permissions:
-      contents: read
+      contents: write
 
     env:
       TF_VAR_snowflake_private_key: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
@@ -53,7 +56,7 @@ jobs:
       - name: Terraform Validate
         working-directory: ${{ inputs.working_directory }}
         run: terraform validate
-  
+
       - name: Terraform Apply (region query)
         if: ${{ inputs.apply }}
         working-directory: ${{ inputs.working_directory }}
@@ -76,3 +79,13 @@ jobs:
         if: ${{ inputs.destroy }}
         working-directory: ${{ inputs.working_directory }}
         run: terraform destroy -auto-approve -input=false -var-file="${{ inputs.var_file }}"
+
+      - name: Save state to repo
+        if: ${{ inputs.apply || inputs.destroy }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin ${{ github.ref_name }}
+          git add ${{ inputs.state_path }} || true
+          git diff --staged --quiet || git commit -m "chore: update terraform state [${{ inputs.environment }}] [skip ci]"
+          git push origin ${{ github.ref_name }}

@@ -83,5 +83,6 @@ resource "snowflake_dynamic_table" "dt" {
     dynamic_table = local.dt_name_by_table_key[each.value.table_key]
   })
 
-  comment = "Managed by Terraform"
-}
+  comment = "Managed by Terraform"  
+  
+} 

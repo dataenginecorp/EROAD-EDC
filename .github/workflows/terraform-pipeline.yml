@@ -1,6 +1,5 @@
 name: Terraform CI/CD Pipeline
 
-
 on:
   push:
     branches: [main, release/**]
@@ -42,6 +41,7 @@ jobs:
       working_directory: ./terraform
       var_file: ../environments/dev/terraform.tfvars
       backend_config: ../environments/dev/backend.hcl
+      state_path: environments/dev/terraform.tfstate
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
@@ -60,6 +60,7 @@ jobs:
       working_directory: ./terraform
       var_file: ../environments/test/terraform.tfvars
       backend_config: ../environments/test/backend.hcl
+      state_path: environments/test/terraform.tfstate
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
@@ -80,6 +81,7 @@ jobs:
       working_directory: ./terraform
       var_file: ../environments/preprod-apac/terraform.tfvars
       backend_config: ../environments/preprod-apac/backend.hcl
+      state_path: environments/preprod-apac/terraform.tfstate
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
@@ -100,6 +102,7 @@ jobs:
       working_directory: ./terraform
       var_file: ../environments/preprod-na/terraform.tfvars
       backend_config: ../environments/preprod-na/backend.hcl
+      state_path: environments/preprod-na/terraform.tfstate
       apply: ${{ fromJSON(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')) }}
       destroy: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.action == 'destroy') }}
 
@@ -115,6 +118,7 @@ jobs:
       working_directory: ./terraform
       var_file: ../environments/prod-apac/terraform.tfvars
       backend_config: ../environments/prod-apac/backend.hcl
+      state_path: environments/prod-apac/terraform.tfstate
       apply: ${{ fromJSON(inputs.action == 'apply') }}
       destroy: ${{ fromJSON(inputs.action == 'destroy') }}
 
@@ -130,5 +134,6 @@ jobs:
       working_directory: ./terraform
       var_file: ../environments/prod-na/terraform.tfvars
       backend_config: ../environments/prod-na/backend.hcl
+      state_path: environments/prod-na/terraform.tfstate
       apply: ${{ fromJSON(inputs.action == 'apply') }}
       destroy: ${{ fromJSON(inputs.action == 'destroy') }}
