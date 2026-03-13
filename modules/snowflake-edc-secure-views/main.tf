@@ -76,3 +76,19 @@ resource "snowflake_view" "secure_view" {
     access_table  = var.access_table
   })
 }
+
+
+resource "snowflake_view" "admin_dt" {
+  name     = var.access_table
+  database = var.edc_db
+
+
+  schema   = var.admin_schema
+
+  is_secure = true
+
+
+  query = "SELECT * FROM ${var.access_db}.${var.access_schema}.${var.access_table}"
+
+  comment = "Managed by Terraform"
+}

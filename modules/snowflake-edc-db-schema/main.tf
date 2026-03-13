@@ -8,7 +8,7 @@ resource "snowflake_database" "edc" {
     prevent_destroy = true
   }
 }
---metadata
+
 resource "snowflake_schema" "metadata" {
   database            = snowflake_database.edc.name
   name                = var.admin_schema_name

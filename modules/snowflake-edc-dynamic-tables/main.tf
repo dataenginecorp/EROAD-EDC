@@ -85,23 +85,3 @@ resource "snowflake_dynamic_table" "dt" {
 
   comment = "Managed by Terraform"
 }
-
-resource "snowflake_dynamic_table" "admin_dt" {
-  name     = var.access_table
-  database = var.edc_db
-
-
-  schema   = var.admin_schema
-
-  target_lag {
-    maximum_duration = var.target_lag_maximum_duration
-  }
-
-  warehouse = var.warehouse
-
-  query = "SELECT * FROM ${var.access_db}.${var.access_schema}.${var.access_table}"
-
-  comment = "Managed by Terraform"
-}
-
--- view for the mapping table
