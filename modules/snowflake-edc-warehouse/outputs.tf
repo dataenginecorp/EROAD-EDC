@@ -1,3 +1,3 @@
 output "warehouse_name" {
-  value = snowflake_warehouse.this.name
+  value = snowflake_warehouse.warehouse.name
 }
