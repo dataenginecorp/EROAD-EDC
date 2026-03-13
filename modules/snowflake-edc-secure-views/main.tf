@@ -88,7 +88,7 @@ resource "snowflake_view" "admin_dt" {
   is_secure = true
 
 
-  query = "SELECT * FROM ${var.access_db}.${var.access_schema}.${var.access_table}"
+  statement = "SELECT * FROM ${var.access_db}.${var.access_schema}.${var.access_table}"
 
   comment = "Managed by Terraform"
 }
