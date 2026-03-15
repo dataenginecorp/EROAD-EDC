@@ -13,6 +13,6 @@ SELECT
     TERMINAL_ID, 
     ACTIVE 
 FROM ${edc_db}.${region_schema}.${dynamic_table} dt
- INNER JOIN ${edc_db}.admin.${access_table} aoa
+ INNER JOIN ${edc_db}.${admin_schema}.${access_table} aoa
  ON CURRENT_ACCOUNT() = aoa.ACCOUNT_NAME 
  AND dt.organisation_id = aoa.organisation_id;

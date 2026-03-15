@@ -3,10 +3,6 @@ resource "snowflake_database" "edc" {
   name                        = var.edc_db
   data_retention_time_in_days = var.data_retention_days
   comment                     = "Managed by Terraform"
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "snowflake_schema" "metadata" {

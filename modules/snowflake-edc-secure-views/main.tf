@@ -1,24 +1,11 @@
 locals {
   prefix = trimspace(var.name_prefix) == "" ? "" : "${upper(trimspace(var.name_prefix))}_"
 
-# Read meta.json per folder, default to empty object if not found
-  all_meta = {
-    for folder in distinct([
-      for f in fileset(var.sql_tables_root, "*/secure_view.sql") : split("/", f)[0] 
-    ]) :
-    folder => try(
-      jsondecode(file("${var.sql_tables_root}/${folder}/meta.json")),
-      {} 
-    )
-  }
+  all_meta = jsondecode(file("${var.sql_tables_root}/tables.json"))
 
-  # If no meta.json, fall back to var.default_account
   eligible_keys = toset([
-    for k, meta in local.all_meta :
-    k if length(setintersection(
-      toset(var.target_account),
-      toset(try(tolist(lookup(meta, "account", var.default_account)), [lookup(meta, "account", var.default_account)]))
-    )) > 0
+    for table, accounts in local.all_meta :
+    table if length(setintersection(toset(accounts), toset(var.target_account))) > 0
   ])
 
   # Filter secure view SQL files to eligible keys only
@@ -44,16 +31,12 @@ dt_name_resolved = {
 
   # Cartesian product: table_key x region_schemas
   view_instances = {
-    for x in flatten([
-      for k, d in local.view_defs : [
-        for s in var.region_schemas : {
-          key         = "${k}.${s}"
-          table_key   = k
-          schema_name = s
-          sql_path    = d.sql_path
-        }
-      ]
-    ]) : x.key => x
+    for pair in setproduct(keys(local.view_defs), var.region_schemas) :
+    "${pair[0]}.${pair[1]}" => {
+      table_key   = pair[0]
+      schema_name = pair[1]
+      sql_path    = local.view_defs[pair[0]].sql_path
+    }
   }
 }
 
@@ -74,21 +57,6 @@ resource "snowflake_view" "secure_view" {
     access_db     = var.access_db
     access_schema = var.access_schema
     access_table  = var.access_table
+    admin_schema = var.admin_schema
   })
-}
-
-
-resource "snowflake_view" "admin_dt" {
-  name     = var.access_table
-  database = var.edc_db
-
-
-  schema   = var.admin_schema
-
-  is_secure = true
-
-
-  statement = "SELECT * FROM ${var.access_db}.${var.access_schema}.${var.access_table}"
-
-  comment = "Managed by Terraform"
 }

@@ -1,24 +1,11 @@
 locals {
   prefix = trimspace(var.name_prefix) == "" ? "" : "${upper(trimspace(var.name_prefix))}_"
 
-# Read meta.json per folder, default to empty object if not found
-  all_meta = {
-    for folder in distinct([
-      for f in fileset(var.sql_tables_root, "*/dynamic_table.sql") : split("/", f)[0]  
-    ]) :
-    folder => try(
-      jsondecode(file("${var.sql_tables_root}/${folder}/meta.json")),
-      {} 
-    )
-  }
+  all_meta = jsondecode(file("${var.sql_tables_root}/tables.json"))
 
-  # If no meta.json, fall back to var.default_account
   eligible_keys = toset([
-    for k, meta in local.all_meta :
-    k if length(setintersection(
-      toset(var.target_account),
-      toset(try(tolist(lookup(meta, "account", var.default_account)), [lookup(meta, "account", var.default_account)]))
-    )) > 0
+    for table, accounts in local.all_meta :
+    table if length(setintersection(toset(accounts), toset(var.target_account))) > 0
   ])
   
   # Filter dynamic table SQL files to eligible keys only
@@ -39,18 +26,14 @@ locals {
 
   # Cartesian product: table_key x region_cloud_rows
   dt_instances = {
-    for x in flatten([
-      for k, d in local.dt_defs : [
-        for rc in var.region_cloud_rows : {
-          key        = "${k}.${rc.schema_name}"
-          table_key  = k
-          schema     = rc.schema_name
-          region_raw = rc.region_raw
-          cloud_raw  = rc.cloud_raw
-          sql_path   = d.sql_path
-        }
-      ]
-    ]) : x.key => x
+    for pair in setproduct(keys(local.dt_defs), var.region_cloud_rows) :
+    "${pair[0]}.${pair[1].schema_name}" => {
+      table_key  = pair[0]
+      schema     = pair[1].schema_name
+      region_raw = pair[1].region_raw
+      cloud_raw  = pair[1].cloud_raw
+      sql_path   = local.dt_defs[pair[0]].sql_path
+    }
   }
 }
 
@@ -83,6 +66,23 @@ resource "snowflake_dynamic_table" "dt" {
     dynamic_table = local.dt_name_by_table_key[each.value.table_key]
   })
 
-  comment = "Managed by Terraform"  
-  
-} 
+  comment = "Managed by Terraform"
+}
+
+resource "snowflake_dynamic_table" "admin_dt" {
+  name     = var.access_table
+  database = var.edc_db
+
+
+  schema   = var.admin_schema
+
+  target_lag {
+    maximum_duration = var.target_lag_maximum_duration
+  }
+
+  warehouse = var.warehouse
+
+  query = "SELECT * FROM ${var.access_db}.${var.access_schema}.${var.access_table}"
+
+  comment = "Managed by Terraform"
+}

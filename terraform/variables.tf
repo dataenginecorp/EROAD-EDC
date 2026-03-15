@@ -15,6 +15,9 @@ variable "access_db" { type = string }
 variable "access_schema" { type = string }
 variable "access_table" { type = string }
 
+variable "snowflake_private_key_path" { type = string } 
+
+
 variable "target_account" {
   description = "Account keys to filter deployable tables e.g. [\"apac\", \"na\"]"
   type        = list(string)
@@ -25,11 +28,6 @@ variable "default_account" {
   description = "Fallback account key for tables without a meta.json"
   type        = string
   default     = ""
-}
-
-variable "snowflake_private_key" {
-  type      = string
-  sensitive = true
 }
 
 variable "warehouse_name" {

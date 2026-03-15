@@ -6,7 +6,7 @@ provider "snowflake" {
   role          = var.snowflake_role
   authenticator = var.snowflake_authenticator
 
-  private_key = var.snowflake_private_key
+  private_key = file(pathexpand(var.snowflake_private_key_path))
 
   warehouse  = var.warehouse
 

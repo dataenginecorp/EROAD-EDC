@@ -15,15 +15,10 @@ SQL
 }
 
 locals {
-  # Build objects so other modules can use both:
-  # - schema_name (EDC schema)
-  # - region_raw / cloud_raw (for filtering)
   region_cloud_rows = [
     for r in snowflake_execute.region_cloud.query_results : {
       region_raw = r.REGION
       cloud_raw  = r.CLOUD
-
-      # No regexreplace in Terraform; use replace() for common separators
       schema_name = upper(
         replace(
           replace(
